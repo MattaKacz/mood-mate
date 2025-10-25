@@ -1,0 +1,1 @@
+Zanim rozpoczniesz pracę, zadaj mi [5-10] pytań, które pomogą Ci lepiej zrozumieć mój obecny kontekst, docelowe oczekiwania oraz wszystko to, o czym mogłem zapomnieć.

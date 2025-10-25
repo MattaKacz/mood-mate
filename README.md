@@ -1,94 +1,116 @@
-# 10x Astro Starter
+# MoodMate
 
-A modern, opinionated starter template for building fast, accessible, and AI-friendly web applications.
+[![Project Status: PoC](https://img.shields.io/badge/status-proof_of_concept-blue.svg)](https://shields.io/)
+
+A simple, friendly web application to support emotional well-being through quick mood tracking and AI-powered, empathetic feedback.
+
+## Table of Contents
+
+- [Project Description](#project-description)
+- [Tech Stack](#tech-stack)
+- [Getting Started Locally](#getting-started-locally)
+- [Available Scripts](#available-scripts)
+- [Project Scope](#project-scope)
+- [Project Status](#project-status)
+- [License](#license)
+
+## Project Description
+
+In today's fast-paced world, managing emotional well-being can be challenging. MoodMate addresses this by providing a frictionless way to log your mood, thoughts, and feelings in under 30 seconds. The application offers instant, AI-generated micro-feedback to provide empathetic support and help you understand your emotional patterns over time.
+
+This project is currently in the Proof of Concept (PoC) stage, focusing on delivering a core, stable, and valuable experience around the "fast entry" feature.
 
 ## Tech Stack
 
-- [Astro](https://astro.build/) v5.5.5 - Modern web framework for building fast, content-focused websites
-- [React](https://react.dev/) v19.0.0 - UI library for building interactive components
-- [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) v4.0.17 - Utility-first CSS framework
+The project leverages a modern, efficient, and scalable tech stack:
 
-## Prerequisites
+| Category               | Technology                                                                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**           | [Astro 5](https://astro.build/), [React 19](https://react.dev/), [TypeScript 5](https://www.typescriptlang.org/), [Tailwind CSS 4](https://tailwindcss.com/), [Shadcn/ui](https://ui.shadcn.com/) |
+| **Backend & Database** | [Supabase](https://supabase.com/) (PostgreSQL, Authentication, BaaS)                                                                                                                              |
+| **AI Services**        | [OpenRouter.ai](https://openrouter.ai/) (Access to GPT-4o-mini and other models)                                                                                                                  |
+| **CI/CD & Hosting**    | [GitHub Actions](https://github.com/features/actions), [DigitalOcean](https://www.digitalocean.com/) (via Docker)                                                                                 |
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
-- npm (comes with Node.js)
+## Getting Started Locally
 
-## Getting Started
+Follow these instructions to set up the project on your local machine for development and testing.
 
-1. Clone the repository:
+### Prerequisites
 
-```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
-```
+- **Node.js**: Version `22.14.0`. It is recommended to use a version manager like [nvm](https://github.com/nvm-sh/nvm).
+  ```sh
+  nvm use
+  ```
+- **Package Manager**: This project uses `npm`.
 
-2. Install dependencies:
+### Installation
 
-```bash
-npm install
-```
+1.  **Clone the repository:**
 
-3. Run the development server:
+    ```sh
+    git clone https://github.com/your-username/mood-mate.git
+    cd mood-mate
+    ```
 
-```bash
-npm run dev
-```
+2.  **Install dependencies:**
 
-4. Build for production:
+    ```sh
+    npm install
+    ```
 
-```bash
-npm run build
-```
+3.  **Set up environment variables:**
+    Create a `.env` file in the root of the project by copying the example file:
+
+    ```sh
+    cp .env.example .env
+    ```
+
+    You will need to populate this file with your credentials for services like Supabase and OpenRouter.ai.
+
+4.  **Run the development server:**
+    ```sh
+    npm run dev
+    ```
+    The application will be available at `http://localhost:4321`.
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
+The following scripts are available in the `package.json`:
 
-## Project Structure
+- `npm run dev`: Starts the development server.
+- `npm run build`: Builds the application for production.
+- `npm run preview`: Serves the production build locally for preview.
+- `npm run lint`: Lints the codebase for errors.
+- `npm run lint:fix`: Lints the codebase and automatically fixes issues.
+- `npm run format`: Formats the code using Prettier.
 
-```md
-.
-├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
-```
+## Project Scope
 
-## AI Development Support
+### Key Features (PoC)
 
-This project is configured with AI development tools to enhance the development experience, providing guidelines for:
+- **Authentication**: Secure user registration and login via email/password (18+ only).
+- **Fast Mood Entry**: A single view to log mood on a 1-5 scale, add an optional note, and select up to 2 tags.
+- **AI-Powered Feedback**: Receive an immediate, empathetic micro-message generated by AI, with a local phrasebook fallback for reliability.
+- **Content Moderation**: A keyword-based filter to detect sensitive content and display a crisis support banner (for AU region) instead of generating AI advice.
+- **Lightweight Dashboard**: View your daily streak, a list of the last 7 days' entries, and a simple weekly mood trend.
+- **Data Privacy**: Full account and data deletion capabilities.
 
-- Project structure
-- Coding practices
-- Frontend development
-- Styling with Tailwind
-- Accessibility best practices
-- Astro and React guidelines
+### Out of Scope (PoC)
 
-### Cursor IDE
+- Advanced AI personalization and long-term analysis.
+- Integrations with third-party services (e.g., Apple Health).
+- Push or email notifications.
+- Offline functionality.
+- Social features or sharing capabilities.
+- Advanced statistics and data export.
+- Editing or deleting individual entries.
 
-The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
+## Project Status
 
-### GitHub Copilot
+**Current Status: Proof of Concept (PoC)**
 
-AI instructions for GitHub Copilot are available in `.github/copilot-instructions.md`
-
-### Windsurf
-
-The `.windsurfrules` file contains AI configuration for Windsurf.
-
-## Contributing
-
-Please follow the AI guidelines and coding practices defined in the AI configuration files when contributing to this project.
+The project is actively under development, focusing on implementing the core features defined in the PoC scope. The main goal is to validate the concept and gather feedback from a small group of initial testers.
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
