@@ -1,0 +1,51 @@
+---
+import AppShell from "@/components/app/AppShell.astro";
+
+const steps = [
+  {
+    title: "Welcome tour",
+    description: "Quick reminder why short mood check-ins matter.",
+  },
+  {
+    title: "Pick ritual time",
+    description: "Preset godziny (np. 18:00, 21:30) zapisane w profilu.",
+  },
+  {
+    title: "First entry",
+    description: "Przeniesienie do szybkiego formularza + sugestia AI.",
+  },
+];
+---
+
+<AppShell title="MoodMate · FTUE">
+  <section class="space-y-6 rounded-2xl border border-border/70 bg-background/95 p-6 shadow-sm">
+    <header class="space-y-2">
+      <p class="text-sm uppercase tracking-[0.2em] text-muted-foreground">FTUE Wizard</p>
+      <h1 class="text-3xl font-semibold tracking-tight">Onboarding placeholder</h1>
+      <p class="text-muted-foreground">
+        Docelowy trzy-etapowy kreator z możliwością Skip. Poniżej opis kroków zgodnie z planem UI.
+      </p>
+    </header>
+
+    <ol class="space-y-4">
+      {
+        steps.map((step, index) => (
+          <li class="flex gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+              {index + 1}
+            </span>
+            <div>
+              <p class="font-medium text-foreground">{step.title}</p>
+              <p class="text-sm text-muted-foreground">{step.description}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="rounded-xl border border-dashed border-border/70 bg-muted/10 p-6 text-sm text-muted-foreground">
+      FTUE zostanie zintegrowane po implementacji `GET /me`, `PUT /me` oraz logiki `ftueState`. Ten placeholder korzysta
+      już z AppShell, żeby zachować spójny layout.
+    </div>
+  </section>
+</AppShell>

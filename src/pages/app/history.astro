@@ -1,0 +1,27 @@
+---
+import AppShell from "@/components/app/AppShell.astro";
+import { HistoryView } from "@/components/app/history/HistoryView";
+---
+
+<AppShell title="MoodMate · Historia wpisów">
+  <section class="mx-auto max-w-4xl space-y-6">
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-muted-foreground">Historia</p>
+        <h1 class="text-3xl font-semibold tracking-tight text-foreground">Twoje wpisy</h1>
+        <p class="text-muted-foreground">Przeglądaj i filtruj swoją historię nastrojów</p>
+      </div>
+      <a
+        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        href="/app/entry/new"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Dodaj nastrój
+      </a>
+    </header>
+
+    <HistoryView client:only="react" />
+  </section>
+</AppShell>

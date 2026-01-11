@@ -1,0 +1,176 @@
+---
+const heroContent = {
+  hero: {
+    badge: "Prywatna beta · MoodMate",
+    heading: "Buduj rytuał dbania o nastrój w 30 sekund.",
+    subheading:
+      "MoodMate łączy szybki dziennik nastroju z empatycznymi mikro-podpowiedziami AI. Zapisuj, obserwuj 7-dniowe trendy i miej wsparcie kryzysowe zawsze pod ręką.",
+    ctaPrimaryLabel: "Poproś o dostęp",
+    ctaPrimaryAria: "Poproś o dostęp do MoodMate",
+    ctaSecondaryLabel: "Masz konto? Zaloguj się",
+    ctaSecondaryAria: "Przejdź do ekranu logowania MoodMate",
+    pocTitle: "Co zawiera PoC",
+    languageHint: "MoodMate działa w języku polskim.",
+  },
+  stats: [
+    { label: "Czas do zapisu", value: "≤30 s", detail: "Rytuał szybkiego logowania nastroju" },
+    { label: "Odpowiedź AI", value: "2.5 s", detail: "GPT‑4o-mini z lokalnym fallbackiem" },
+    { label: "Wsparcie", value: "PL ready", detail: "Wbudowane numery kryzysowe" },
+  ],
+  features: [
+    {
+      title: "Błyskawiczny zapis",
+      copy: "Wybierz nastrój 1–5, dodaj opcjonalną notatkę (280 znaków) i maksymalnie dwa tagi. Jeden ekran, zero tarcia dla testerów.",
+    },
+    {
+      title: "Empatyczna mikro-porada",
+      copy: "Każdy zapis uruchamia dwuzdaniową sugestię z GPT‑4o-mini. Po timeoutcie natychmiast pojawia się dobrany lokalnie fallback.",
+    },
+    {
+      title: "Szacunek dla prywatności",
+      copy: "Brak notatek w analityce, brak zapisów w localStorage, a Supabase Auth pilnuje sesji. Głosy „helpful / not helpful” są anonimowe.",
+    },
+  ],
+  glimpses: {
+    heading: "Filary produktu",
+    dashboardTag: "Pulpit",
+    dashboardCopy: "Seria 7 dni, delikatne przypomnienie rytuału i CTA Dodaj nastrój po FTUE.",
+    fastEntryTag: "Szybki wpis",
+    fastEntryCopy: "Optymistyczny zapis oraz stany sugestii AI (`pending`, `completed`, `fallback`, `skipped`).",
+    safetyTag: "Bezpieczeństwo",
+    safetyCopy: "Zasoby kryzysowe, moderacja i flow usunięcia konta są w pełni zaplanowane.",
+  },
+  aside: {
+    badge: "Sieć bezpieczeństwa",
+    title: "Numery pomocowe zawsze pod ręką",
+    guardrailsTag: "Zabezpieczenia",
+    disclaimer:
+      "MoodMate nie zastępuje pomocy profesjonalnej. Wszystkie sugestie to edukacyjna mikro-coaching, a nie porada medyczna.",
+  },
+  safeguards: [
+    "Lista słów kluczowych blokuje wysyłkę ryzykownych notatek do AI.",
+    "Stały dostęp do zasobów kryzysowych z polskimi numerami.",
+    "Limiter zapytań, strażnik sesji oraz logika FTUE są gotowe do wdrożenia.",
+  ],
+  crisisResources: [
+    { label: "Numer alarmowy", value: "112" },
+    { label: "Linia wsparcia", value: "116 123" },
+    { label: "Centrum kryzysowe", value: "800 70 222" },
+  ],
+};
+
+const t = heroContent;
+---
+
+<section
+  class="relative min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950/70 to-slate-900 text-white"
+  lang="pl"
+>
+  <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.25),_transparent_60%)]">
+  </div>
+  <div class="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16 sm:px-10">
+    <header class="space-y-6 text-balance">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="inline-flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-indigo-200">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span>{t.hero.badge}</span>
+        </p>
+        <p class="text-sm text-indigo-200 sm:text-right">{t.hero.languageHint}</p>
+      </div>
+      <h1 class="text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">{t.hero.heading}</h1>
+      <p class="max-w-3xl text-lg text-indigo-100 sm:text-xl">{t.hero.subheading}</p>
+      <div class="flex flex-col gap-4 sm:flex-row">
+        <a
+          href="/register"
+          class="inline-flex items-center justify-center rounded-full bg-indigo-500 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-indigo-700/40 transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200"
+          aria-label={t.hero.ctaPrimaryAria}
+        >
+          <span>{t.hero.ctaPrimaryLabel}</span>
+        </a>
+        <a
+          href="/login"
+          class="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:border-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+          aria-label={t.hero.ctaSecondaryAria}
+        >
+          <span>{t.hero.ctaSecondaryLabel}</span>
+        </a>
+      </div>
+      <div class="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <p class="text-sm uppercase text-indigo-200">{t.hero.pocTitle}</p>
+        <div class="grid gap-6 sm:grid-cols-3">
+          {
+            t.stats.map((stat) => (
+              <div class="space-y-1" aria-label={stat.label}>
+                <p class="text-3xl font-semibold text-white">{stat.value}</p>
+                <p class="text-sm text-indigo-200">{stat.detail}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[2fr,1fr]">
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+        <p class="text-sm uppercase tracking-[0.3em] text-indigo-200">{t.glimpses.heading}</p>
+        <div class="mt-6 space-y-8">
+          {
+            t.features.map((feature) => (
+              <div class="space-y-2 border-l-2 border-indigo-400/60 pl-4" aria-label={feature.title}>
+                <h3 class="text-xl font-semibold text-white">{feature.title}</h3>
+                <p class="text-indigo-100">{feature.copy}</p>
+              </div>
+            ))
+          }
+        </div>
+        <div class="mt-10 grid gap-6 rounded-2xl border border-white/10 bg-slate-900/60 p-6 sm:grid-cols-3">
+          <div class="space-y-1 text-indigo-100">
+            <p class="text-xs uppercase tracking-[0.2em] text-emerald-300">{t.glimpses.dashboardTag}</p>
+            <p class="text-sm">{t.glimpses.dashboardCopy}</p>
+          </div>
+          <div class="space-y-1 text-indigo-100">
+            <p class="text-xs uppercase tracking-[0.2em] text-emerald-300">{t.glimpses.fastEntryTag}</p>
+            <p class="text-sm">{t.glimpses.fastEntryCopy}</p>
+          </div>
+          <div class="space-y-1 text-indigo-100">
+            <p class="text-xs uppercase tracking-[0.2em] text-emerald-300">{t.glimpses.safetyTag}</p>
+            <p class="text-sm">{t.glimpses.safetyCopy}</p>
+          </div>
+        </div>
+      </article>
+
+      <aside class="flex flex-col gap-6 rounded-3xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-rose-200">{t.aside.badge}</p>
+          <h3 class="mt-2 text-2xl font-semibold text-white">{t.aside.title}</h3>
+          <ul class="mt-4 space-y-3 text-indigo-100">
+            {
+              t.crisisResources.map((item) => (
+                <li class="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                  <span class="text-sm">{item.label}</span>
+                  <span class="font-mono text-lg text-white">{item.value}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-sky-200">{t.aside.guardrailsTag}</p>
+          <ul class="mt-3 space-y-2 text-sm text-indigo-100">
+            {
+              t.safeguards.map((item) => (
+                <li class="flex gap-2">
+                  <span aria-hidden="true" class="mt-1 inline-flex h-2 w-2 rounded-full bg-sky-300" />
+                  <span>{item}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-indigo-100">
+          {t.aside.disclaimer}
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>

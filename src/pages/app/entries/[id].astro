@@ -1,0 +1,16 @@
+---
+import AppShell from "@/components/app/AppShell.astro";
+import { EntryDetailView } from "@/components/app/entry/EntryDetailView";
+
+const { id } = Astro.params;
+
+if (!id || isNaN(Number(id))) {
+  return Astro.redirect("/app/dashboard");
+}
+---
+
+<AppShell title="MoodMate · Szczegóły wpisu">
+  <section class="mx-auto max-w-3xl">
+    <EntryDetailView entryId={id} client:only="react" />
+  </section>
+</AppShell>

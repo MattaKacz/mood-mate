@@ -31,6 +31,15 @@ The project leverages a modern, efficient, and scalable tech stack:
 | **AI Services**        | [OpenRouter.ai](https://openrouter.ai/) (Access to GPT-4o-mini and other models)                                                                                                                  |
 | **CI/CD & Hosting**    | [GitHub Actions](https://github.com/features/actions), [DigitalOcean](https://www.digitalocean.com/) (via Docker)                                                                                 |
 
+### OpenRouter model policy
+
+- Wszystkie środowiska (dev/stage/prod) są obecnie na sztywno przypięte do darmowego modelu `tngtech/tng-r1t-chimera:free`. Identyfikator jest wpisany w `src/lib/openrouter.service.ts` jako `DEFAULT_MODEL_NAME`, więc zmiana wymaga modyfikacji kodu, a nie tylko konfiguracji `.env`.
+- Dopóki korzystamy z darmowego planu, nie ustawiamy zmiennej `OPENROUTER_DEFAULT_MODEL`. Gdy pojawi się potrzeba przełączenia na płatny model, należy:
+  1. Zweryfikować koszty i limity dla nowego modelu w panelu OpenRouter.
+  2. Zmienić wartość `DEFAULT_MODEL_NAME` (i opcjonalnie dodać wpis do rejestru modeli) w `openrouter.service.ts`.
+  3. Uzupełnić dokumentację oraz, jeśli wrócimy do wariantu konfigurowalnego, przywrócić walidację zmiennej środowiskowej.
+- Dzięki temu unikamy rozbieżności między środowiskami i mamy pełną kontrolę nad kosztami, ale pamiętajmy, że każda zmiana modelu wymaga code review oraz ponownego wdrożenia.
+
 ## Getting Started Locally
 
 Follow these instructions to set up the project on your local machine for development and testing.

@@ -1,0 +1,20 @@
+---
+import AppShell from "@/components/app/AppShell.astro";
+import { AddMoodWrapper } from "@/components/app/mood/AddMoodWrapper";
+---
+
+<AppShell title="MoodMate · Dodaj nastrój">
+  <section class="mx-auto max-w-3xl space-y-6">
+    <header class="space-y-2">
+      <p class="text-sm uppercase tracking-[0.2em] text-muted-foreground">Szybki wpis</p>
+      <h1 class="text-3xl font-semibold tracking-tight text-foreground">Zapisz dzisiejszy nastrój</h1>
+      <p class="text-muted-foreground">
+        Poświęć chwilę, aby zapisać, jak się czujesz. Pomoże Ci to lepiej zrozumieć swoje emocje.
+      </p>
+    </header>
+
+    <div class="rounded-2xl border border-border/70 bg-background/95 p-6 shadow-sm">
+      <AddMoodWrapper client:only="react" />
+    </div>
+  </section>
+</AppShell>

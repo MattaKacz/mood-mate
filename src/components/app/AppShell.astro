@@ -1,0 +1,72 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import LogoutButton from "@/components/auth/LogoutButton";
+
+interface NavItem {
+  href: string;
+  label: string;
+  external?: boolean;
+}
+
+interface Props {
+  title?: string;
+  userEmail?: string | null;
+}
+
+const { title = "MoodMate · App", userEmail = null } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const navItems: NavItem[] = [
+  { href: "/app/dashboard", label: "Pulpit" },
+  { href: "/app/entry/new", label: "Dodaj nastrój" },
+  { href: "/app/history", label: "Historia" },
+];
+
+const isActive = (href: string) => currentPath === href;
+---
+
+<Layout title={title}>
+  <div class="min-h-screen bg-muted/10">
+    <header class="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4 md:flex-nowrap md:gap-6">
+        <div class="flex flex-1 items-baseline gap-3">
+          <a class="text-xl font-semibold tracking-tight text-foreground leading-none" href="/app/dashboard">MoodMate</a
+          >
+          <span class="hidden text-sm text-muted-foreground/80 leading-none md:inline">·</span>
+          <span class="hidden text-sm text-muted-foreground/80 leading-none md:inline">
+            {userEmail ?? "przestrzeń prywatna"}
+          </span>
+        </div>
+        <nav class="flex flex-1 flex-wrap items-center gap-2 text-sm text-muted-foreground md:justify-center">
+          {
+            navItems.map((item) => (
+              <a
+                href={item.href}
+                class={`inline-flex items-center justify-center rounded-full px-4 py-2 transition-all duration-300 ${
+                  isActive(item.href)
+                    ? "bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 backdrop-blur-xl border border-primary/20 scale-[1.02]"
+                    : "bg-background/40 backdrop-blur-md border border-border/40 hover:bg-background/60 hover:border-border/60 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                }`}
+                aria-current={isActive(item.href) ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+        <div class="flex flex-1 items-center justify-end gap-2 text-sm">
+          <a
+            class="inline-flex items-center justify-center rounded-full border border-border/40 bg-background/40 backdrop-blur-md px-3 py-1.5 text-muted-foreground transition-all duration-300 hover:bg-background/60 hover:border-border/60 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            href="/crisis-resources"
+          >
+            Pomoc kryzysowa
+          </a>
+          <LogoutButton client:load variant="ghost" size="sm" redirectTo="/login" />
+        </div>
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-4 py-10">
+      <slot />
+    </main>
+  </div>
+</Layout>

@@ -1,0 +1,43 @@
+---
+import AppShell from "@/components/app/AppShell.astro";
+import DashboardView from "@/components/app/dashboard/DashboardView";
+import { getDashboardSummary } from "@/lib/services/dashboard/summary.server";
+import { logError } from "@/lib/utils/error-handler";
+import type { DashboardSummaryDTO } from "@/types";
+
+const supabase = Astro.locals.supabase;
+
+if (!supabase || !Astro.locals.isAuthenticated) {
+  return Astro.redirect("/login");
+}
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+  return Astro.redirect("/login");
+}
+
+const timezone = Astro.url.searchParams.get("tz");
+
+let summary: DashboardSummaryDTO;
+
+try {
+  summary = await getDashboardSummary(supabase, user.id, { timezone });
+} catch (error) {
+  logError("pages/app/dashboard", error);
+  summary = {
+    streak: 0,
+    trendDirection: "steady",
+    trendDelta: 0,
+    entries: [],
+  };
+}
+
+const userEmail = user.email ?? null;
+---
+
+<AppShell title="MoodMate · Dashboard" userEmail={userEmail}>
+  <DashboardView client:load summary={summary} initialTimezone={timezone ?? undefined} userEmail={userEmail} />
+</AppShell>

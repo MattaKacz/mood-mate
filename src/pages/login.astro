@@ -1,0 +1,19 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import PublicAuthLayout from "@/components/auth/PublicAuthLayout.astro";
+import LoginView from "@/components/auth/LoginView";
+
+const url = new URL(Astro.request.url);
+const initialRedirectTo = url.searchParams.get("redirectTo") ?? undefined;
+
+const pageCopy = {
+  heading: "Zaloguj się do MoodMate",
+  subheading: "Podaj swoje dane, aby przejść do prywatnego dziennika.",
+};
+---
+
+<Layout title={pageCopy.heading}>
+  <PublicAuthLayout heading={pageCopy.heading} subheading={pageCopy.subheading}>
+    <LoginView client:load initialRedirectTo={initialRedirectTo ?? undefined} />
+  </PublicAuthLayout>
+</Layout>

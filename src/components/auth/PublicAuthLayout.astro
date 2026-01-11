@@ -1,0 +1,48 @@
+---
+interface Props {
+  heading: string;
+  subheading?: string;
+}
+
+const { heading = "", subheading } = Astro.props as Props;
+const layoutCopy = {
+  brand: "Mood Mate",
+  polishOnlyNotice: "MoodMate działa wyłącznie w języku polskim.",
+  heading,
+  subheading,
+  helpPrompt: "Potrzebujesz natychmiastowej pomocy?",
+  helpCta: "Sprawdź zasoby kryzysowe",
+  disclaimer: "MoodMate nie zastępuje konsultacji z lekarzem ani psychoterapeutą.",
+  crisisNumbers: "W nagłych sytuacjach dzwoń 112, 116 123 lub 800 70 222.",
+};
+---
+
+<section class="min-h-screen w-full bg-background" data-public-auth>
+  <div class="mx-auto flex max-w-lg flex-col gap-6 px-4 py-12">
+    <header class="space-y-4 text-center">
+      <div class="flex flex-col gap-2 text-sm text-muted-foreground">
+        <p class="text-sm uppercase tracking-wide text-muted-foreground">{layoutCopy.brand}</p>
+        <span>{layoutCopy.polishOnlyNotice}</span>
+      </div>
+      <div>
+        <h1 class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{layoutCopy.heading}</h1>
+        {subheading && <p class="mt-1 text-muted-foreground">{subheading}</p>}
+      </div>
+    </header>
+
+    <main class="rounded-2xl border border-border/80 bg-card p-6 shadow-lg shadow-black/5">
+      <slot />
+    </main>
+
+    <footer class="space-y-2 text-center text-sm text-muted-foreground">
+      <p>
+        <span>{layoutCopy.helpPrompt}</span>{" "}
+        <a class="text-primary underline underline-offset-4" href="/crisis-resources">
+          {layoutCopy.helpCta}
+        </a>
+      </p>
+      <p>{layoutCopy.crisisNumbers}</p>
+      <p>{layoutCopy.disclaimer}</p>
+    </footer>
+  </div>
+</section>
