@@ -4,6 +4,7 @@ import type { LoginFormErrorState, RateLimitState } from "@/lib/viewmodels/auth/
 interface LoginClientSuccess {
   success: true;
   data: AuthSessionDTO;
+  redirect?: string;
   rateLimit?: RateLimitState;
 }
 
@@ -31,16 +32,18 @@ export async function login(command: LoginCommand): Promise<LoginClientResponse>
     const payload = await parseJson(response);
 
     if (response.ok) {
+      const successPayload = normalizeSuccessPayload(payload);
       return {
         success: true,
-        data: payload as AuthSessionDTO,
+        data: successPayload.data,
+        redirect: successPayload.redirect,
         rateLimit,
       };
     }
 
     const backendMessage = extractMessage(payload);
     const errorState: LoginFormErrorState = {
-      globalMessage: mapGlobalMessage(response.status),
+      globalMessage: deriveGlobalMessage(response.status, backendMessage),
       fieldErrors: mapFieldErrors(response.status, backendMessage),
       requestId,
       httpStatus: response.status,
@@ -67,20 +70,43 @@ export async function login(command: LoginCommand): Promise<LoginClientResponse>
   }
 }
 
-async function parseJson(response: Response): Promise<AuthSessionDTO | MessageDTO | null> {
+interface LoginSuccessPayload {
+  success: true;
+  data: AuthSessionDTO;
+  redirect?: string;
+}
+type LoginPayload = LoginSuccessPayload | AuthSessionDTO | MessageDTO | null;
+
+async function parseJson(response: Response): Promise<LoginPayload> {
   try {
-    return (await response.json()) as AuthSessionDTO | MessageDTO;
+    return (await response.json()) as LoginPayload;
   } catch {
     return null;
   }
 }
 
-function extractMessage(payload: AuthSessionDTO | MessageDTO | null): string | undefined {
+function extractMessage(payload: LoginPayload): string | undefined {
   if (!payload || typeof payload !== "object" || !("message" in payload)) {
     return undefined;
   }
 
   return typeof payload.message === "string" ? payload.message : undefined;
+}
+
+function normalizeSuccessPayload(payload: LoginPayload): LoginSuccessPayload {
+  if (payload && typeof payload === "object" && "success" in payload && payload.success === true && "data" in payload) {
+    return {
+      success: true,
+      data: payload.data as AuthSessionDTO,
+      redirect: "redirect" in payload && typeof payload.redirect === "string" ? payload.redirect : undefined,
+    };
+  }
+
+  return {
+    success: true,
+    data: (payload as AuthSessionDTO) ?? ({} as AuthSessionDTO),
+    redirect: undefined,
+  };
 }
 
 function buildRateLimitState(response: Response): RateLimitState {
@@ -102,12 +128,22 @@ function buildRateLimitState(response: Response): RateLimitState {
   };
 }
 
-function mapGlobalMessage(status: number): string {
+function deriveGlobalMessage(status: number, backendMessage?: string): string {
+  if (backendMessage) {
+    return backendMessage;
+  }
+
   switch (status) {
     case 400:
       return "Sprawdź formularz i spróbuj ponownie.";
     case 401:
       return "Nieprawidłowy email lub hasło.";
+    case 404:
+      return "Nie znaleziono użytkownika o podanym adresie email.";
+    case 409:
+      return "Konto z tym adresem email już istnieje.";
+    case 422:
+      return "Nie spełniono wymagań bezpieczeństwa hasła.";
     case 429:
       return "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.";
     case 500:

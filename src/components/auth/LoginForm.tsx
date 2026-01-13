@@ -49,6 +49,22 @@ export default function LoginForm({ onSuccess, defaultEmail = "" }: LoginFormPro
     setIsHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (errorState?.fieldErrors) {
+      Object.entries(errorState.fieldErrors).forEach(([field, message]) => {
+        if (message) {
+          form.setError(field as keyof LoginFormValues, { message });
+        }
+      });
+    }
+  }, [errorState?.fieldErrors, form]);
+
+  useEffect(() => {
+    if (submitState === "success") {
+      form.clearErrors();
+    }
+  }, [submitState, form]);
+
   useFocusOnFirstError(form);
   const remainingCooldownSeconds = useRateLimitCooldown(rateLimit);
 

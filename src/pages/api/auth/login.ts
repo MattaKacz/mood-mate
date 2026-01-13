@@ -1,12 +1,16 @@
 import type { APIRoute } from "astro";
 import { loginSchema } from "../../../lib/validation/auth/login.schema";
 import { loginUser } from "../../../lib/services/auth/login.service";
-import type { MessageDTO } from "../../../types";
+import type { AuthSessionDTO, MessageDTO } from "../../../types";
 import { checkRateLimit, createRateLimitKey, getClientIp } from "../../../lib/utils/rate-limiter";
 import { generateRequestId, logError } from "../../../lib/utils/error-handler";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 
 export const prerender = false;
+
+const DEFAULT_REDIRECT = "/app/dashboard";
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_SECONDS = 300;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const requestId = generateRequestId();
@@ -15,8 +19,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const clientIp = getClientIp(request);
     const rateLimitKey = createRateLimitKey("login", clientIp);
     const rateLimit = checkRateLimit(rateLimitKey, {
-      maxRequests: 10,
-      windowSeconds: 300,
+      maxRequests: RATE_LIMIT_MAX,
+      windowSeconds: RATE_LIMIT_WINDOW_SECONDS,
     });
 
     if (!rateLimit.allowed) {
@@ -35,7 +39,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           headers: {
             "Content-Type": "application/json",
             "X-Request-Id": requestId,
-            "X-RateLimit-Limit": "10",
+            "X-RateLimit-Limit": RATE_LIMIT_MAX.toString(),
             "X-RateLimit-Remaining": "0",
             "X-RateLimit-Reset": resetDate.toISOString(),
           },
@@ -125,13 +129,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    return new Response(JSON.stringify(result.data), {
+    const responsePayload: { success: true; data: AuthSessionDTO; redirect: string } = {
+      success: true,
+      data: result.data,
+      redirect: DEFAULT_REDIRECT,
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         "X-Request-Id": requestId,
-        "X-RateLimit-Limit": "10",
+        "X-RateLimit-Limit": RATE_LIMIT_MAX.toString(),
         "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+        "X-RateLimit-Reset": new Date(rateLimit.resetAt).toISOString(),
       },
     });
   } catch (error) {

@@ -1,17 +1,23 @@
 import type { APIRoute } from "astro";
 import { clearAuthCookies } from "../../../lib/utils/auth-cookies";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import type { MessageDTO } from "../../../types";
 import { generateRequestId, logError } from "../../../lib/utils/error-handler";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ locals, cookies }) => {
+export const POST: APIRoute = async ({ locals, cookies, request }) => {
   const requestId = generateRequestId();
 
   try {
-    if (locals.supabase) {
-      await locals.supabase.auth.signOut();
-    }
+    const supabase =
+      locals.supabase ??
+      createSupabaseServerInstance({
+        cookies,
+        headers: request.headers,
+      });
+
+    await supabase.auth.signOut();
 
     clearAuthCookies(cookies);
 

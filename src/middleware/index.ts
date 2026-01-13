@@ -1,12 +1,23 @@
 import { defineMiddleware } from "astro:middleware";
 
 import { createSupabaseServerInstance } from "../db/supabase.client.ts";
+import { createLoginRedirect } from "../lib/utils/auth-redirect";
 import { logError } from "../lib/utils/error-handler.ts";
 
 const PUBLIC_AUTH_ROUTES = ["/", "/faq", "/login", "/register", "/forgot-password", "/auth/reset-password"];
 const PRIVATE_APP_PREFIX = "/app";
+const PUBLIC_AUTH_API_PREFIX = "/api/auth/";
 
 export const onRequest = defineMiddleware(async ({ request, url, cookies, locals }, next) => {
+  const currentPath = url.pathname;
+  const isPublicAuthApiRoute = currentPath.startsWith(PUBLIC_AUTH_API_PREFIX);
+
+  // Auth API endpoints nie wymagają wstępnego sprawdzania sesji
+  // (login/register/reset itp.) — unikamy szumu "Auth session missing!".
+  if (isPublicAuthApiRoute) {
+    return next();
+  }
+
   const supabase = createSupabaseServerInstance({
     cookies,
     headers: request.headers,
@@ -19,7 +30,7 @@ export const onRequest = defineMiddleware(async ({ request, url, cookies, locals
     error,
   } = await supabase.auth.getUser();
 
-  if (error) {
+  if (error && error.name !== "AuthSessionMissingError") {
     logError("middleware:getUser", error, { path: url.pathname });
     await supabase.auth.signOut();
   }
@@ -33,7 +44,6 @@ export const onRequest = defineMiddleware(async ({ request, url, cookies, locals
 
   locals.isAuthenticated = Boolean(user);
 
-  const currentPath = url.pathname;
   const isPublicAuthRoute = PUBLIC_AUTH_ROUTES.includes(currentPath);
   const isPrivateRoute = currentPath.startsWith(PRIVATE_APP_PREFIX);
 
@@ -42,9 +52,7 @@ export const onRequest = defineMiddleware(async ({ request, url, cookies, locals
   }
 
   if (!locals.isAuthenticated && isPrivateRoute) {
-    const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("redirectTo", `${currentPath}${url.search}`);
-    return Response.redirect(redirectUrl);
+    return createLoginRedirect(url);
   }
 
   return next();

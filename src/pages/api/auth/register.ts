@@ -5,6 +5,7 @@ import type { MessageDTO } from "../../../types";
 import { checkRateLimit, getClientIp, createRateLimitKey } from "../../../lib/utils/rate-limiter";
 import { generateRequestId, logError } from "../../../lib/utils/error-handler";
 import { persistAuthCookies } from "../../../lib/utils/auth-cookies";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
 
 export const prerender = false;
 
@@ -143,26 +144,17 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     }
 
     // Krok 4: Sprawdzenie dostępności klienta Supabase
-    if (!locals.supabase) {
-      logError("POST /api/auth/register", new Error("Supabase client not available"), {
-        requestId,
+    const supabase =
+      locals.supabase ??
+      createSupabaseServerInstance({
+        cookies,
+        headers: request.headers,
       });
-      return new Response(
-        JSON.stringify({
-          message: "Serwis tymczasowo niedostępny",
-        } satisfies MessageDTO),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-Id": requestId,
-          },
-        }
-      );
-    }
+
+    locals.supabase = supabase;
 
     // Krok 5: Wywołanie serwisu rejestracji
-    const result = await registerUser(locals.supabase, command);
+    const result = await registerUser(supabase, command);
 
     // Krok 6: Obsługa wyniku
     if (!result.success) {

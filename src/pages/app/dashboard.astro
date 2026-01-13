@@ -2,22 +2,17 @@
 import AppShell from "@/components/app/AppShell.astro";
 import DashboardView from "@/components/app/dashboard/DashboardView";
 import { getDashboardSummary } from "@/lib/services/dashboard/summary.server";
+import { ensureAuthenticated } from "@/lib/utils/auth-redirect";
 import { logError } from "@/lib/utils/error-handler";
 import type { DashboardSummaryDTO } from "@/types";
 
-const supabase = Astro.locals.supabase;
+const authContext = ensureAuthenticated(Astro.locals, Astro.url);
 
-if (!supabase || !Astro.locals.isAuthenticated) {
-  return Astro.redirect("/login");
+if ("redirect" in authContext) {
+  return authContext.redirect;
 }
 
-const {
-  data: { user },
-} = await supabase.auth.getUser();
-
-if (!user) {
-  return Astro.redirect("/login");
-}
+const { supabase, user } = authContext;
 
 const timezone = Astro.url.searchParams.get("tz");
 
