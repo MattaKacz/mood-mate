@@ -29,6 +29,8 @@ The project leverages a modern, efficient, and scalable tech stack:
 | **Frontend**           | [Astro 5](https://astro.build/), [React 19](https://react.dev/), [TypeScript 5](https://www.typescriptlang.org/), [Tailwind CSS 4](https://tailwindcss.com/), [Shadcn/ui](https://ui.shadcn.com/) |
 | **Backend & Database** | [Supabase](https://supabase.com/) (PostgreSQL, Authentication, BaaS)                                                                                                                              |
 | **AI Services**        | [OpenRouter.ai](https://openrouter.ai/) (Access to GPT-4o-mini and other models)                                                                                                                  |
+| **Testing (Unit)**     | [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)                                                                             |
+| **Testing (E2E)**      | [Playwright](https://playwright.dev/)                                                                                                                                                             |
 | **CI/CD & Hosting**    | [GitHub Actions](https://github.com/features/actions), [DigitalOcean](https://www.digitalocean.com/) (via Docker)                                                                                 |
 
 ### OpenRouter model policy
@@ -46,7 +48,7 @@ Follow these instructions to set up the project on your local machine for develo
 
 ### Prerequisites
 
-- **Node.js**: Version `22.14.0`. It is recommended to use a version manager like [nvm](https://github.com/nvm-sh/nvm).
+- **Node.js**: Version `20.19.1`. It is recommended to use a version manager like [nvm](https://github.com/nvm-sh/nvm).
   ```sh
   nvm use
   ```
@@ -92,6 +94,25 @@ The following scripts are available in the `package.json`:
 - `npm run lint`: Lints the codebase for errors.
 - `npm run lint:fix`: Lints the codebase and automatically fixes issues.
 - `npm run format`: Formats the code using Prettier.
+- `npm run test`: Runs unit tests (Vitest).
+- `npm run test:unit`: Runs unit tests once.
+- `npm run test:unit:watch`: Runs unit tests in watch mode.
+- `npm run test:unit:ui`: Opens the Vitest UI.
+- `npm run test:e2e`: Runs Playwright E2E tests.
+- `npm run test:e2e:ui`: Opens Playwright UI runner.
+- `npm run test:e2e:report`: Opens the Playwright HTML report.
+
+## Testing Conventions
+
+- Unit tests live in `tests/unit`.
+- E2E tests live in `tests/playwright`.
+- Playwright Page Object Model lives in `tests/playwright/pages`.
+
+### E2E Requirements
+
+- A running Supabase backend with migrations applied (or a dedicated test instance).
+- A configured `.env` with the required Supabase credentials.
+- The app runs via the Playwright `webServer` command (`npm run dev -- --host 0.0.0.0 --port 4173`).
 
 ## Project Scope
 

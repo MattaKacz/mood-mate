@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { LoginPage, RegisterPage } from "./pages";
 
 /**
  * E2E testy dla flow autentykacji (rejestracja + logowanie)
@@ -16,53 +17,30 @@ function generateTestEmail(): string {
 
 const TEST_PASSWORD = "TestPassword123!";
 
-async function waitForRegisterForm(page: Page) {
-  await expect(page.getByTestId("register-form")).toHaveAttribute("data-ready", "true");
-}
-
-async function gotoRegister(page: Page) {
-  await page.goto("/register");
-  await waitForRegisterForm(page);
-}
-
-async function waitForLoginForm(page: Page) {
-  await expect(page.getByTestId("login-form")).toHaveAttribute("data-ready", "true");
-}
-
-async function gotoLogin(page: Page) {
-  await page.goto("/login");
-  await waitForLoginForm(page);
-}
-
 test.describe("Rejestracja użytkownika", () => {
   test("pomyślna rejestracja z przekierowaniem do FTUE", async ({ page }) => {
     const testEmail = generateTestEmail();
 
-    await gotoRegister(page);
-    await expect(page.getByRole("heading", { level: 1, name: "Załóż konto MoodMate" })).toBeVisible();
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
+    await expect(registerPage.heading).toBeVisible();
 
     // Wypełnij formularz
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword(TEST_PASSWORD);
 
     // Zaznacz checkboxy i poczekaj na zmianę stanu
-    const termsCheckbox = page.getByRole("checkbox", { name: "Akceptuję Regulamin i Politykę prywatności" }).first();
-    await termsCheckbox.click();
-    await expect(termsCheckbox).toBeChecked();
-
-    const adultCheckbox = page.getByRole("checkbox", { name: "Potwierdzam, że mam 18 lat lub więcej" }).first();
-    await adultCheckbox.click();
-    await expect(adultCheckbox).toBeChecked();
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
     // Sprawdź czy przycisk submit jest aktywny
-    const submitButton = page.getByRole("button", { name: "Utwórz konto" });
-    await expect(submitButton).toBeEnabled();
+    await expect(registerPage.submitButton).toBeEnabled();
 
     // Wyślij formularz
-    await submitButton.click();
+    await registerPage.submit();
 
     // Sprawdź loading state
-    await expect(page.getByRole("button", { name: /Tworzę konto/ })).toBeVisible();
+    await expect(registerPage.submitButtonLoading).toBeVisible();
 
     // Poczekaj na przekierowanie
     await page.waitForURL(/\/(app\/ftue|app\/dashboard)/, { timeout: 10000 });
@@ -71,70 +49,73 @@ test.describe("Rejestracja użytkownika", () => {
   });
 
   test("walidacja - blokada submit bez zaznaczenia checkboxów", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
-    await page.getByLabel("Adres email").fill("test@example.com");
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
+    await registerPage.fillEmail("test@example.com");
+    await registerPage.fillPassword(TEST_PASSWORD);
 
     // Checkboxy nie zaznaczone - przycisk powinien być disabled
-    const submitButton = page.getByRole("button", { name: "Utwórz konto" });
-    await expect(submitButton).toBeDisabled();
+    await expect(registerPage.submitButton).toBeDisabled();
   });
 
   test("walidacja - niepoprawny format emaila", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
-    await page.getByLabel("Adres email").fill("niepoprawny-email");
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
+    await registerPage.fillEmail("niepoprawny-email");
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    await registerPage.submit();
 
     // Sprawdź błąd walidacji
-    await expect(page.getByText(/Podaj poprawny adres email/i)).toBeVisible();
+    await expect(registerPage.invalidEmailError).toBeVisible();
   });
 
   test("walidacja - zbyt krótkie hasło", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
-    await page.getByLabel("Adres email").fill("test@example.com");
-    await page.getByLabel("Hasło").fill("short");
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
+    await registerPage.fillEmail("test@example.com");
+    await registerPage.fillPassword("short");
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    await registerPage.submit();
 
     // Sprawdź błąd walidacji (min 8 znaków) - użyj bardziej specyficznego selektora
-    const errorMessage = page.locator('[data-slot="form-message"]').filter({ hasText: /Użyj co najmniej 8 znaków/ });
-    await expect(errorMessage).toBeVisible();
+    await expect(registerPage.minPasswordLengthError).toBeVisible();
   });
 
   test("wyświetla wskazówkę dot. siły hasła", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     // Sprawdź czy PasswordStrengthHint jest widoczny (wielokrotny match - weź pierwszy)
-    await expect(page.getByText(/Użyj co najmniej 8 znaków/i).first()).toBeVisible();
+    await expect(registerPage.passwordHint).toBeVisible();
 
     // Wpisz hasło i sprawdź live feedback
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await expect(page.getByText(/Wygląda dobrze/i)).toBeVisible();
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await expect(registerPage.passwordStrongHint).toBeVisible();
   });
 
   test("linki do regulaminu i polityki prywatności", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     // Sprawdź czy linki istnieją (są w tekście checkboxa)
-    await expect(page.getByRole("link", { name: "Regulamin" })).toHaveAttribute("href", "/terms");
-    await expect(page.getByRole("link", { name: "Politykę prywatności" })).toHaveAttribute("href", "/privacy");
+    await expect(registerPage.termsLink).toHaveAttribute("href", "/terms");
+    await expect(registerPage.privacyLink).toHaveAttribute("href", "/privacy");
   });
 
   test("link do logowania dla istniejących użytkowników", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
-    const loginLink = page.getByRole("link", { name: /Zaloguj się/i });
-    await expect(loginLink).toBeVisible();
-    await expect(loginLink).toHaveAttribute("href", "/login");
+    await expect(registerPage.loginLink).toBeVisible();
+    await expect(registerPage.loginLink).toHaveAttribute("href", "/login");
   });
 });
 
@@ -143,12 +124,15 @@ test.describe("Logowanie użytkownika", () => {
     // Najpierw zarejestruj użytkownika
     const testEmail = generateTestEmail();
 
-    await gotoRegister(page);
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    const registerPage = new RegisterPage(page);
+    const loginPage = new LoginPage(page);
+
+    await registerPage.gotoRegister();
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
+    await registerPage.submit();
 
     // Poczekaj na przekierowanie po rejestracji
     await page.waitForURL(/\/app\//, { timeout: 10000 });
@@ -157,21 +141,20 @@ test.describe("Logowanie użytkownika", () => {
     await context.clearCookies();
 
     // Przejdź do strony logowania
-    await gotoLogin(page);
-    await expect(page.getByRole("heading", { level: 1, name: "Zaloguj się do MoodMate" })).toBeVisible();
+    await loginPage.gotoLogin();
+    await expect(loginPage.heading).toBeVisible();
 
     // Wypełnij formularz logowania
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
+    await loginPage.fillEmail(testEmail);
+    await loginPage.fillPassword(TEST_PASSWORD);
 
-    const submitButton = page.getByRole("button", { name: "Zaloguj się" });
-    await expect(submitButton).toBeEnabled();
+    await expect(loginPage.submitButton).toBeEnabled();
 
     // Zaloguj się
-    await submitButton.click();
+    await loginPage.submit();
 
     // Sprawdź loading state
-    await expect(page.getByRole("button", { name: /Loguję/ })).toBeVisible();
+    await expect(loginPage.submitButtonLoading).toBeVisible();
 
     // Poczekaj na przekierowanie do dashboard
     await page.waitForURL("/app/dashboard", { timeout: 10000 });
@@ -181,7 +164,8 @@ test.describe("Logowanie użytkownika", () => {
   });
 
   test("błąd przy niepoprawnym haśle", async ({ page }) => {
-    await gotoLogin(page);
+    const loginPage = new LoginPage(page);
+    await loginPage.gotoLogin();
     await page.route(
       "**/api/auth/login",
       async (route) => {
@@ -194,30 +178,30 @@ test.describe("Logowanie użytkownika", () => {
       { times: 1 }
     );
 
-    await page.getByLabel("Adres email").fill("test@example.com");
-    await page.getByLabel("Hasło").fill("WrongPassword123!");
+    await loginPage.fillEmail("test@example.com");
+    await loginPage.fillPassword("WrongPassword123!");
 
-    await page.getByRole("button", { name: "Zaloguj się" }).click();
+    await loginPage.submit();
 
     // Sprawdź komunikat błędu - użytkownik nie istnieje lub złe hasło
     // Backend zwraca "Nieprawidłowy email lub hasło"
-    await expect(page.getByText(/Nieprawidłowy email lub hasło/i)).toBeVisible();
+    await expect(loginPage.invalidCredentialsError).toBeVisible();
   });
 
   test("link do rejestracji dla nowych użytkowników", async ({ page }) => {
-    await gotoLogin(page);
+    const loginPage = new LoginPage(page);
+    await loginPage.gotoLogin();
 
-    const registerLink = page.getByRole("link", { name: /Załóż je/i });
-    await expect(registerLink).toBeVisible();
-    await expect(registerLink).toHaveAttribute("href", "/register");
+    await expect(loginPage.registerLink).toBeVisible();
+    await expect(loginPage.registerLink).toHaveAttribute("href", "/register");
   });
 
   test("link do resetu hasła", async ({ page }) => {
-    await gotoLogin(page);
+    const loginPage = new LoginPage(page);
+    await loginPage.gotoLogin();
 
-    const resetLink = page.getByRole("link", { name: /Zapomniałeś hasła/i });
-    await expect(resetLink).toBeVisible();
-    await expect(resetLink).toHaveAttribute("href", "/password/reset");
+    await expect(loginPage.resetLink).toBeVisible();
+    await expect(loginPage.resetLink).toHaveAttribute("href", "/forgot-password");
   });
 });
 
@@ -226,12 +210,13 @@ test.describe("Middleware i przekierowania", () => {
     // Najpierw zarejestruj i zaloguj użytkownika
     const testEmail = generateTestEmail();
 
-    await gotoRegister(page);
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
+    await registerPage.submit();
 
     await page.waitForURL(/\/app\//, { timeout: 10000 });
 
@@ -252,58 +237,51 @@ test.describe("Middleware i przekierowania", () => {
 
 test.describe("Dostępność (a11y)", () => {
   test("formularz rejestracji ma odpowiednie etykiety i ARIA", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     // Sprawdź czy pola mają powiązane etykiety
-    const emailInput = page.getByLabel("Adres email");
-    await expect(emailInput).toBeVisible();
-    await expect(emailInput).toHaveAttribute("autocomplete", "email");
-    await expect(emailInput).toHaveAttribute("inputmode", "email");
+    await expect(registerPage.emailInput).toBeVisible();
+    await expect(registerPage.emailInput).toHaveAttribute("autocomplete", "email");
+    await expect(registerPage.emailInput).toHaveAttribute("inputmode", "email");
 
-    const passwordInput = page.getByLabel("Hasło");
-    await expect(passwordInput).toBeVisible();
-    await expect(passwordInput).toHaveAttribute("type", "password");
-    await expect(passwordInput).toHaveAttribute("autocomplete", "new-password");
+    await expect(registerPage.passwordInput).toBeVisible();
+    await expect(registerPage.passwordInput).toHaveAttribute("type", "password");
+    await expect(registerPage.passwordInput).toHaveAttribute("autocomplete", "new-password");
 
     // Sprawdź checkboxy
-    const termsCheckbox = page.getByLabel("Akceptuję Regulamin i Politykę prywatności");
-    await expect(termsCheckbox).toBeVisible();
+    await expect(registerPage.termsCheckbox).toBeVisible();
     // aria-describedby może mieć dynamiczny ID, sprawdźmy że istnieje
-    await expect(termsCheckbox).toHaveAttribute("aria-describedby", /.+/);
+    await expect(registerPage.termsCheckbox).toHaveAttribute("aria-describedby", /.+/);
 
-    const adultCheckbox = page.getByLabel("Potwierdzam, że mam 18 lat lub więcej");
-    await expect(adultCheckbox).toBeVisible();
+    await expect(registerPage.adultCheckbox).toBeVisible();
   });
 
   test("komunikaty błędów mają aria-live", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     // Wypełnij formularz z błędami
-    await page.getByLabel("Adres email").fill("invalid-email");
-    await page.getByLabel("Hasło").fill("short");
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
+    await registerPage.fillEmail("invalid-email");
+    await registerPage.fillPassword("short");
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    await registerPage.submit();
 
     // Sprawdź czy kontener błędów ma aria-live (jest ich kilka - weź ten z formularza rejestracji)
-    const errorContainer = page
-      .getByTestId("register-form")
-      .locator('div[aria-live="polite"][aria-atomic="true"]')
-      .first();
-    await expect(errorContainer).toBeVisible();
+    await expect(registerPage.errorContainer).toBeVisible();
   });
 
   test("przycisk submit ma aria-busy podczas ładowania", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     const testEmail = generateTestEmail();
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
-
-    const submitButton = page.getByTestId("register-submit");
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
     // Intercept request z opóźnieniem aby złapać stan loading
     await page.route(
@@ -317,13 +295,13 @@ test.describe("Dostępność (a11y)", () => {
     );
 
     // Kliknij i natychmiast sprawdź aria-busy
-    const clickPromise = submitButton.click();
+    const clickPromise = registerPage.submitButtonTestId.click();
 
     // Poczekaj chwilę na start submitu
     await page.waitForTimeout(50);
 
     // Teraz sprawdź aria-busy
-    await expect(submitButton).toHaveAttribute("aria-busy", "true");
+    await expect(registerPage.submitButtonTestId).toHaveAttribute("aria-busy", "true");
 
     // Poczekaj na zakończenie kliknięcia
     await clickPromise;
@@ -332,43 +310,43 @@ test.describe("Dostępność (a11y)", () => {
 
 test.describe("Obsługa błędów", () => {
   test("wyświetla komunikat przy błędzie sieci", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     const testEmail = generateTestEmail();
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill(TEST_PASSWORD);
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword(TEST_PASSWORD);
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
     // Symuluj błąd sieci
     await page.route("**/api/auth/register", (route) => route.abort("failed"));
 
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    await registerPage.submit();
 
     // Sprawdź komunikat błędu (tekst dokładny z register.client.ts linia 57)
-    await expect(page.getByText(/Nie udało się połączyć z serwerem. Spróbuj ponownie za chwilę./i)).toBeVisible();
+    await expect(registerPage.networkErrorMessage).toBeVisible();
   });
 
   test("zachowuje dane w formularzu po błędzie", async ({ page }) => {
-    await gotoRegister(page);
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
 
     const testEmail = "test@example.com";
-    await page.getByLabel("Adres email").fill(testEmail);
-    await page.getByLabel("Hasło").fill("short"); // zbyt krótkie hasło
-    await page.getByText("Akceptuję Regulamin i Politykę prywatności", { exact: true }).click();
-    await page.getByText("Potwierdzam, że mam 18 lat lub więcej", { exact: true }).click();
+    await registerPage.fillEmail(testEmail);
+    await registerPage.fillPassword("short"); // zbyt krótkie hasło
+    await registerPage.acceptTerms();
+    await registerPage.acceptAdult();
 
-    await page.getByRole("button", { name: "Utwórz konto" }).click();
+    await registerPage.submit();
 
     // Sprawdź błąd walidacji - użyj specyficznego selektora dla komunikatu błędu
-    const errorMessage = page.locator('[data-slot="form-message"]').filter({ hasText: /Użyj co najmniej 8 znaków/ });
-    await expect(errorMessage).toBeVisible();
+    await expect(registerPage.minPasswordLengthError).toBeVisible();
 
     // Poczekaj chwilę na zakończenie walidacji
     await page.waitForTimeout(100);
 
     // Sprawdź czy email jest zachowany (react-hook-form normalizuje: trim + toLowerCase)
-    const emailInput = page.getByLabel("Adres email");
-    await expect(emailInput).toHaveValue(testEmail);
+    await expect(registerPage.emailInput).toHaveValue(testEmail);
   });
 });
