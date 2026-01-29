@@ -57,7 +57,7 @@ const AUTH_ERROR_MAP: Record<string, { status: number; message: string }> = {
 
 /**
  * Mapuje błąd Supabase Auth na strukturę z kodem HTTP i komunikatem.
- * 
+ *
  * @param error - Błąd z Supabase
  * @returns Zmapowany błąd z odpowiednim statusem HTTP
  */
@@ -65,7 +65,7 @@ export function mapSupabaseAuthError(error: AuthError | Error): MappedError {
   // Sprawdź, czy to błąd Supabase Auth
   if ("code" in error && error.code) {
     const mapped = AUTH_ERROR_MAP[error.code];
-    
+
     if (mapped) {
       return {
         httpStatus: mapped.status,
@@ -74,16 +74,16 @@ export function mapSupabaseAuthError(error: AuthError | Error): MappedError {
       };
     }
   }
-  
+
   // Sprawdź status HTTP jeśli dostępny
   if ("status" in error && typeof error.status === "number") {
     return {
       httpStatus: error.status,
       message: error.message || "Wystąpił błąd podczas operacji",
-      code: ("code" in error && typeof error.code === "string") ? error.code : "UNKNOWN_ERROR",
+      code: "code" in error && typeof error.code === "string" ? error.code : "UNKNOWN_ERROR",
     };
   }
-  
+
   // Domyślny błąd serwera
   return {
     httpStatus: 500,
@@ -120,7 +120,7 @@ const POSTGRES_ERROR_MAP: Record<string, { status: number; message: string }> = 
 
 /**
  * Mapuje błąd bazy danych Postgres na strukturę z kodem HTTP i komunikatem.
- * 
+ *
  * @param error - Błąd z bazy danych
  * @returns Zmapowany błąd z odpowiednim statusem HTTP
  */
@@ -133,7 +133,7 @@ export function mapPostgresError(error: { code?: string; message?: string }): Ma
       code: error.code,
     };
   }
-  
+
   return {
     httpStatus: 500,
     message: error.message || "Wystąpił błąd bazy danych",
@@ -143,7 +143,7 @@ export function mapPostgresError(error: { code?: string; message?: string }): Ma
 
 /**
  * Uniwersalny mapper błędów - próbuje rozpoznać typ błędu i zmapować go odpowiednio.
- * 
+ *
  * @param error - Dowolny błąd
  * @returns Zmapowany błąd z odpowiednim statusem HTTP
  */
@@ -155,12 +155,12 @@ export function mapError(error: unknown): MappedError {
       code: "UNKNOWN_ERROR",
     };
   }
-  
+
   // Sprawdź, czy to błąd Supabase Auth
   if (error instanceof Error && "status" in error) {
     return mapSupabaseAuthError(error as AuthError);
   }
-  
+
   // Sprawdź, czy to błąd Postgres
   if (typeof error === "object" && "code" in error && typeof (error as { code?: string }).code === "string") {
     const pgCode = (error as { code: string }).code;
@@ -168,7 +168,7 @@ export function mapError(error: unknown): MappedError {
       return mapPostgresError(error as { code: string; message?: string });
     }
   }
-  
+
   // Standardowy błąd JavaScript
   if (error instanceof Error) {
     return {
@@ -177,7 +177,7 @@ export function mapError(error: unknown): MappedError {
       code: "INTERNAL_ERROR",
     };
   }
-  
+
   // Nieznany typ błędu
   return {
     httpStatus: 500,
@@ -185,4 +185,3 @@ export function mapError(error: unknown): MappedError {
     code: "UNKNOWN_ERROR",
   };
 }
-

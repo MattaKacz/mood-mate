@@ -18,6 +18,7 @@ TEST_DISABLE_RATE_LIMITING=true
 ### Dlaczego `TEST_DISABLE_RATE_LIMITING=true`?
 
 Rate limiting jest niezbędny w produkcji, ale w testach E2E:
+
 - Testy działają równolegle (`fullyParallel: true`)
 - Wszystkie testy pochodzą z tego samego IP (localhost)
 - Bez wyłączenia rate limitingu, testy zaczynają się blokować po ~5-6 równoległych rejestracji
@@ -119,11 +120,13 @@ npx playwright test --headed
 **Problem:** `TimeoutError: page.waitForURL: Timeout exceeded`
 
 **Możliwe przyczyny:**
+
 1. Rate limiting nie jest wyłączony - sprawdź `.env.test`
 2. Backend Supabase nie odpowiada
 3. Błąd w logice przekierowania
 
 **Rozwiązanie:**
+
 ```sh
 # Sprawdź czy zmienna jest ustawiona
 cat .env.test | grep TEST_DISABLE_RATE_LIMITING
