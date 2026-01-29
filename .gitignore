@@ -25,7 +25,7 @@ pnpm-debug.log*
 .idea/
 
 # AI-related folders
-.ai/
+#.ai/
 .cursor/
 
 # Test artifacts

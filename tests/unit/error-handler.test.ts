@@ -1,8 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppError, createErrorResponse, generateRequestId } from "@/lib/utils/error-handler";
 
 describe("error-handler", () => {
+  beforeEach(() => {
+    vi.stubGlobal("console", {
+      ...console,
+      error: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("tworzy odpowiedź z AppError", async () => {
     const error = new AppError("AUTH_ERROR", "Brak autoryzacji", 401);
     const response = createErrorResponse(error, "req-1");
