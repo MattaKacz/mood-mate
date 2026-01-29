@@ -136,7 +136,7 @@ describe("dashboard summary helpers", () => {
 
   it("evaluateRitualDue wskazuje due, gdy czas minął", () => {
     // Act
-    const result = evaluateRitualDue("11:00");
+    const result = evaluateRitualDue("11:00", "UTC");
 
     // Assert
     expect(result.isDue).toBe(true);
@@ -144,7 +144,7 @@ describe("dashboard summary helpers", () => {
 
   it("evaluateRitualDue wskazuje brak due, gdy czas jeszcze nie nadszedł", () => {
     // Act
-    const result = evaluateRitualDue("13:00");
+    const result = evaluateRitualDue("13:00", "UTC");
 
     // Assert
     expect(result.isDue).toBe(false);

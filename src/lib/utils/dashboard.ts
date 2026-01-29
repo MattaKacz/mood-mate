@@ -57,7 +57,11 @@ export function evaluateRitualDue(ritualTime: string, timezone?: string): { labe
 
   const now = getDateInTimezone(new Date(), timezone);
   const ritualDate = new Date(now);
-  ritualDate.setHours(hours, minutes, 0, 0);
+  if (timezone) {
+    ritualDate.setUTCHours(hours, minutes, 0, 0);
+  } else {
+    ritualDate.setHours(hours, minutes, 0, 0);
+  }
 
   const isDue = now.getTime() >= ritualDate.getTime();
 

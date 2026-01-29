@@ -15,6 +15,17 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
+      include: [
+        "src/lib/services/mood/**",
+        "src/lib/utils/dashboard.ts",
+        "src/lib/utils/error-handler.ts",
+        "src/lib/utils/rate-limiter.ts",
+        "src/lib/utils/supabase-error-mapper.ts",
+        "src/lib/validation/mood/create-entry.schema.ts",
+        "src/lib/openrouter/schemas/mood-suggestion.ts",
+        "src/components/hooks/useAddMoodMutation.ts",
+        "src/components/app/mood/AddMoodForm.tsx",
+      ],
       thresholds: {
         lines: 60,
         statements: 60,
