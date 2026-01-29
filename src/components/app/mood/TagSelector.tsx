@@ -24,7 +24,7 @@ export function TagSelector({ value, onChange, error, disabled }: TagSelectorPro
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-test-id="mood-tag-selector">
       <div className="flex items-baseline justify-between">
         <Label htmlFor="mood-tags" className="text-base font-semibold">
           Tagi
@@ -43,6 +43,7 @@ export function TagSelector({ value, onChange, error, disabled }: TagSelectorPro
         aria-label="Wybierz tagi nastroju"
         aria-describedby={error ? "mood-tags-error" : "mood-tags-hint"}
         className="flex flex-wrap gap-2"
+        data-test-id="mood-tag-options"
       >
         {tagOptions.map((tag) => {
           const isSelected = value.includes(tag.id);
@@ -65,6 +66,7 @@ export function TagSelector({ value, onChange, error, disabled }: TagSelectorPro
                     : "border-border/60 bg-background text-foreground hover:border-primary/50 hover:bg-muted/50"
                 }
               `}
+              data-test-id={`mood-tag-${tag.id}`}
             >
               {tag.label}
             </button>

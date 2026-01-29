@@ -17,7 +17,7 @@ interface MoodScorePickerProps {
 
 export function MoodScorePicker({ value, onChange, error, disabled }: MoodScorePickerProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-test-id="mood-score-picker">
       <Label htmlFor="mood-score" className="text-base font-semibold">
         Jak się dzisiaj czujesz? <span className="text-destructive">*</span>
       </Label>
@@ -29,6 +29,7 @@ export function MoodScorePicker({ value, onChange, error, disabled }: MoodScoreP
         aria-invalid={!!error}
         aria-describedby={error ? "mood-score-error" : undefined}
         className="grid grid-cols-5 gap-3"
+        data-test-id="mood-score-options"
       >
         {MOOD_LEVELS.map((mood) => {
           const isSelected = value === mood.score;
@@ -52,6 +53,7 @@ export function MoodScorePicker({ value, onChange, error, disabled }: MoodScoreP
                     : "border-border/60 bg-background hover:border-primary/50 hover:bg-muted/30"
                 }
               `}
+              data-test-id={`mood-score-${mood.score}`}
             >
               <span className="text-4xl transition-transform group-hover:scale-110" aria-hidden="true">
                 {mood.emoji}

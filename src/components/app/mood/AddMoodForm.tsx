@@ -147,8 +147,8 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
 
   if (showSuccess) {
     return (
-      <div className="space-y-6">
-        <Alert className="border-green-500/50 bg-green-500/10">
+      <div className="space-y-6" data-test-id="add-mood-success">
+        <Alert className="border-green-500/50 bg-green-500/10" data-test-id="add-mood-success-alert">
           <div className="flex items-start gap-3">
             <span className="text-2xl" aria-hidden="true">
               ✅
@@ -169,10 +169,10 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
         )}
 
         <div className="flex gap-3">
-          <Button onClick={handleReset} variant="outline" className="flex-1">
+          <Button onClick={handleReset} variant="outline" className="flex-1" data-test-id="add-mood-add-another">
             Dodaj kolejny wpis
           </Button>
-          <Button asChild className="flex-1">
+          <Button asChild className="flex-1" data-test-id="add-mood-back-dashboard">
             <a href="/app/dashboard">Wróć do dashboardu</a>
           </Button>
         </div>
@@ -181,9 +181,9 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" data-test-id="add-mood-form">
       {errors.submit && (
-        <Alert className="border-destructive/50 bg-destructive/10">
+        <Alert className="border-destructive/50 bg-destructive/10" data-test-id="add-mood-form-error">
           <div className="flex items-start gap-3">
             <span className="text-xl" aria-hidden="true">
               ⚠️
@@ -227,7 +227,10 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
         disabled={isLoading}
       />
 
-      <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+      <div
+        className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4"
+        data-test-id="add-mood-ai-toggle"
+      >
         <input
           type="checkbox"
           id="request-suggestion"
@@ -235,6 +238,7 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
           onChange={(e) => setFormData({ ...formData, requestSuggestion: e.target.checked })}
           disabled={isLoading}
           className="h-4 w-4 rounded border-border/60 text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          data-test-id="add-mood-ai-toggle-input"
         />
         <label htmlFor="request-suggestion" className="flex-1 text-sm text-foreground">
           Otrzymaj spersonalizowaną sugestię AI
@@ -242,13 +246,23 @@ export function AddMoodForm({ onSuccess, defaultRequestSuggestion = false }: Add
       </div>
 
       <div className="flex gap-3">
-        <Button type="button" variant="outline" onClick={handleReset} disabled={isLoading} className="flex-1">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleReset}
+          disabled={isLoading}
+          className="flex-1"
+          data-test-id="add-mood-reset"
+        >
           Wyczyść
         </Button>
-        <Button type="submit" disabled={isLoading} className="flex-1">
+        <Button type="submit" disabled={isLoading} className="flex-1" data-test-id="add-mood-submit">
           {isLoading ? (
             <>
-              <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span
+                className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                data-test-id="add-mood-submit-loading"
+              />
               Zapisuję...
             </>
           ) : (

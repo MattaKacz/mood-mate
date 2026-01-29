@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { LoginPage, RegisterPage } from "./pages";
 
 /**
@@ -8,52 +8,163 @@ import { LoginPage, RegisterPage } from "./pages";
  * W środowisku CI należy użyć testowej instancji Supabase lub mock'ów.
  */
 
-// Helper do generowania unikalnego emaila dla testów
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Brak wymaganej zmiennej środowiskowej: ${name}`);
+  }
+  return value;
+}
+
+const E2E_LOGIN_EMAIL = getRequiredEnv("E2E_USERNAME");
+const E2E_LOGIN_PASSWORD = getRequiredEnv("E2E_PASSWORD");
+
+// Helper do generowania unikalnego emaila dla testów (ten sam domenowy login)
 function generateTestEmail(): string {
+  const [localPart, domain] = E2E_LOGIN_EMAIL.split("@");
+  const safeLocal = (localPart ?? "e2e").replace(/[^a-z0-9._-]/gi, "");
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(7);
-  return `test-${timestamp}-${random}@example.com`;
+  return `${safeLocal}+${timestamp}@${domain ?? "example.com"}`;
 }
 
 const TEST_PASSWORD = "TestPassword123!";
+const REGISTER_ENDPOINT = "/api/auth/register";
+const LOGIN_ENDPOINT = "/api/auth/login";
+
+async function mockAuthSuccess(page: Page, endpoint: string, email: string, status = 201, delayMs = 0) {
+  const now = Date.now();
+  const session = {
+    user: {
+      id: `e2e-user-${now}`,
+      email,
+    },
+    session: {
+      accessToken: `e2e-access-${now}`,
+      refreshToken: `e2e-refresh-${now}`,
+      expiresAt: new Date(now + 60 * 60 * 1000).toISOString(),
+    },
+  };
+
+  await page.route(
+    `**${endpoint}`,
+    async (route) => {
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      await route.fulfill({
+        status,
+        contentType: "application/json",
+        body: JSON.stringify(session),
+      });
+    },
+    { times: 1 }
+  );
+
+  return session;
+}
+
+async function fillRegisterForm(
+  registerPage: RegisterPage,
+  email: string,
+  password = TEST_PASSWORD,
+  { acceptTerms = true, acceptAdult = true } = {}
+) {
+  await registerPage.fillEmail(email);
+  await registerPage.fillPassword(password);
+
+  if (acceptTerms) {
+    await registerPage.acceptTerms();
+  }
+
+  if (acceptAdult) {
+    await registerPage.acceptAdult();
+  }
+}
+
+async function registerWithSupabase({
+  page,
+  email,
+  password = TEST_PASSWORD,
+  waitForRedirect = true,
+}: {
+  page: Page;
+  email: string;
+  password?: string;
+  waitForRedirect?: boolean;
+}) {
+  const registerPage = new RegisterPage(page);
+  await registerPage.gotoRegister();
+  await expect(registerPage.heading).toBeVisible();
+
+  await fillRegisterForm(registerPage, email, password);
+  await expect(registerPage.submitButton).toBeEnabled();
+
+  const registerResponsePromise = page.waitForResponse((response) => response.url().includes(REGISTER_ENDPOINT));
+
+  await registerPage.submit();
+
+  const registerResponse = await registerResponsePromise;
+  const registerStatus = registerResponse.status();
+  const registerPayload = await registerResponse.json().catch(() => null);
+  expect(registerStatus, `register response: ${JSON.stringify(registerPayload)}`).toBeGreaterThanOrEqual(200);
+  expect(registerStatus, `register response: ${JSON.stringify(registerPayload)}`).toBeLessThan(300);
+
+  if (waitForRedirect) {
+    await page.waitForURL(/\/(app\/ftue|app\/dashboard)/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/app\//);
+  }
+
+  return { registerPage };
+}
+
+async function loginWithSupabase({
+  page,
+  email,
+  password = TEST_PASSWORD,
+}: {
+  page: Page;
+  email: string;
+  password?: string;
+}) {
+  const loginPage = new LoginPage(page);
+  await loginPage.gotoLogin();
+  await expect(loginPage.heading).toBeVisible();
+
+  await loginPage.fillEmail(email);
+  await loginPage.fillPassword(password);
+  await expect(loginPage.submitButton).toBeEnabled();
+
+  const loginResponsePromise = page.waitForResponse((response) => response.url().includes(LOGIN_ENDPOINT));
+
+  await loginPage.submit();
+
+  const loginResponse = await loginResponsePromise;
+  const loginStatus = loginResponse.status();
+  const loginPayload = await loginResponse.json().catch(() => null);
+  expect(loginStatus, `login response: ${JSON.stringify(loginPayload)}`).toBeGreaterThanOrEqual(200);
+  expect(loginStatus, `login response: ${JSON.stringify(loginPayload)}`).toBeLessThan(300);
+
+  await page.waitForURL("/app/dashboard", { timeout: 10000 });
+  await expect(page).toHaveURL("/app/dashboard");
+
+  return { loginPage };
+}
 
 test.describe("Rejestracja użytkownika", () => {
   test("pomyślna rejestracja z przekierowaniem do FTUE", async ({ page }) => {
     const testEmail = generateTestEmail();
 
-    const registerPage = new RegisterPage(page);
-    await registerPage.gotoRegister();
-    await expect(registerPage.heading).toBeVisible();
-
-    // Wypełnij formularz
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword(TEST_PASSWORD);
-
-    // Zaznacz checkboxy i poczekaj na zmianę stanu
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
-
-    // Sprawdź czy przycisk submit jest aktywny
-    await expect(registerPage.submitButton).toBeEnabled();
-
-    // Wyślij formularz
-    await registerPage.submit();
-
-    // Sprawdź loading state
-    await expect(registerPage.submitButtonLoading).toBeVisible();
-
-    // Poczekaj na przekierowanie
-    await page.waitForURL(/\/(app\/ftue|app\/dashboard)/, { timeout: 10000 });
-
-    await expect(page).toHaveURL(/\/app\//);
+    await registerWithSupabase({ page, email: testEmail });
   });
 
   test("walidacja - blokada submit bez zaznaczenia checkboxów", async ({ page }) => {
     const registerPage = new RegisterPage(page);
     await registerPage.gotoRegister();
 
-    await registerPage.fillEmail("test@example.com");
-    await registerPage.fillPassword(TEST_PASSWORD);
+    await fillRegisterForm(registerPage, "test@example.com", TEST_PASSWORD, {
+      acceptTerms: false,
+      acceptAdult: false,
+    });
 
     // Checkboxy nie zaznaczone - przycisk powinien być disabled
     await expect(registerPage.submitButton).toBeDisabled();
@@ -63,10 +174,7 @@ test.describe("Rejestracja użytkownika", () => {
     const registerPage = new RegisterPage(page);
     await registerPage.gotoRegister();
 
-    await registerPage.fillEmail("niepoprawny-email");
-    await registerPage.fillPassword(TEST_PASSWORD);
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, "niepoprawny-email");
 
     await registerPage.submit();
 
@@ -78,10 +186,7 @@ test.describe("Rejestracja użytkownika", () => {
     const registerPage = new RegisterPage(page);
     await registerPage.gotoRegister();
 
-    await registerPage.fillEmail("test@example.com");
-    await registerPage.fillPassword("short");
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, "test@example.com", "short");
 
     await registerPage.submit();
 
@@ -120,54 +225,15 @@ test.describe("Rejestracja użytkownika", () => {
 });
 
 test.describe("Logowanie użytkownika", () => {
-  test("pomyślne logowanie z przekierowaniem do dashboard", async ({ page, context }) => {
-    // Najpierw zarejestruj użytkownika
-    const testEmail = generateTestEmail();
-
-    const registerPage = new RegisterPage(page);
-    const loginPage = new LoginPage(page);
-
-    await registerPage.gotoRegister();
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword(TEST_PASSWORD);
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
-    await registerPage.submit();
-
-    // Poczekaj na przekierowanie po rejestracji
-    await page.waitForURL(/\/app\//, { timeout: 10000 });
-
-    // Wyloguj się (usuń cookies)
-    await context.clearCookies();
-
-    // Przejdź do strony logowania
-    await loginPage.gotoLogin();
-    await expect(loginPage.heading).toBeVisible();
-
-    // Wypełnij formularz logowania
-    await loginPage.fillEmail(testEmail);
-    await loginPage.fillPassword(TEST_PASSWORD);
-
-    await expect(loginPage.submitButton).toBeEnabled();
-
-    // Zaloguj się
-    await loginPage.submit();
-
-    // Sprawdź loading state
-    await expect(loginPage.submitButtonLoading).toBeVisible();
-
-    // Poczekaj na przekierowanie do dashboard
-    await page.waitForURL("/app/dashboard", { timeout: 10000 });
-
-    // Sprawdź czy jesteśmy na dashboardzie
-    await expect(page).toHaveURL("/app/dashboard");
+  test("pomyślne logowanie z przekierowaniem do dashboard", async ({ page }) => {
+    await loginWithSupabase({ page, email: E2E_LOGIN_EMAIL, password: E2E_LOGIN_PASSWORD });
   });
 
   test("błąd przy niepoprawnym haśle", async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.gotoLogin();
     await page.route(
-      "**/api/auth/login",
+      `**${LOGIN_ENDPOINT}`,
       async (route) => {
         await route.fulfill({
           status: 401,
@@ -207,18 +273,7 @@ test.describe("Logowanie użytkownika", () => {
 
 test.describe("Middleware i przekierowania", () => {
   test("zalogowany użytkownik jest przekierowany z /login do /app/dashboard", async ({ page }) => {
-    // Najpierw zarejestruj i zaloguj użytkownika
-    const testEmail = generateTestEmail();
-
-    const registerPage = new RegisterPage(page);
-    await registerPage.gotoRegister();
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword(TEST_PASSWORD);
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
-    await registerPage.submit();
-
-    await page.waitForURL(/\/app\//, { timeout: 10000 });
+    await loginWithSupabase({ page, email: E2E_LOGIN_EMAIL, password: E2E_LOGIN_PASSWORD });
 
     // Teraz spróbuj wejść na /login - powinien przekierować do /app/dashboard
     await page.goto("/login");
@@ -262,10 +317,7 @@ test.describe("Dostępność (a11y)", () => {
     await registerPage.gotoRegister();
 
     // Wypełnij formularz z błędami
-    await registerPage.fillEmail("invalid-email");
-    await registerPage.fillPassword("short");
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, "invalid-email", "short");
 
     await registerPage.submit();
 
@@ -278,30 +330,16 @@ test.describe("Dostępność (a11y)", () => {
     await registerPage.gotoRegister();
 
     const testEmail = generateTestEmail();
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword(TEST_PASSWORD);
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, testEmail);
 
     // Intercept request z opóźnieniem aby złapać stan loading
-    await page.route(
-      "**/api/auth/register",
-      async (route) => {
-        // Opóźnij odpowiedź o 500ms aby mieć czas złapać aria-busy="true"
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await route.continue();
-      },
-      { times: 1 }
-    );
+    await mockAuthSuccess(page, REGISTER_ENDPOINT, testEmail, 201, 500);
 
     // Kliknij i natychmiast sprawdź aria-busy
     const clickPromise = registerPage.submitButtonTestId.click();
 
-    // Poczekaj chwilę na start submitu
-    await page.waitForTimeout(50);
-
     // Teraz sprawdź aria-busy
-    await expect(registerPage.submitButtonTestId).toHaveAttribute("aria-busy", "true");
+    await expect(registerPage.submitButtonTestId).toHaveAttribute("aria-busy", "true", { timeout: 2000 });
 
     // Poczekaj na zakończenie kliknięcia
     await clickPromise;
@@ -309,18 +347,51 @@ test.describe("Dostępność (a11y)", () => {
 });
 
 test.describe("Obsługa błędów", () => {
+  test("wyświetla komunikat przy przekroczeniu rate limitu", async ({ page }) => {
+    const registerPage = new RegisterPage(page);
+    await registerPage.gotoRegister();
+
+    const testEmail = generateTestEmail();
+    await fillRegisterForm(registerPage, testEmail);
+
+    // Symuluj przekroczenie rate limitu (429)
+    const resetAt = new Date(Date.now() + 60000).toISOString();
+    await page.route(
+      `**${REGISTER_ENDPOINT}`,
+      async (route) => {
+        await route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          headers: {
+            "X-RateLimit-Limit": "5",
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": resetAt,
+          },
+          body: JSON.stringify({ message: "Za dużo prób. Odczekaj chwilę i spróbuj ponownie." }),
+        });
+      },
+      { times: 1 }
+    );
+
+    await registerPage.submit();
+
+    // Sprawdź komunikat rate limitu
+    const rateLimitNotice = page.getByText(/Za dużo prób. Odczekaj chwilę i spróbuj ponownie/i);
+    await expect(rateLimitNotice).toBeVisible();
+
+    // Sprawdź że przycisk jest zablokowany
+    await expect(registerPage.submitButtonTestId).toBeDisabled();
+  });
+
   test("wyświetla komunikat przy błędzie sieci", async ({ page }) => {
     const registerPage = new RegisterPage(page);
     await registerPage.gotoRegister();
 
     const testEmail = generateTestEmail();
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword(TEST_PASSWORD);
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, testEmail);
 
     // Symuluj błąd sieci
-    await page.route("**/api/auth/register", (route) => route.abort("failed"));
+    await page.route(`**${REGISTER_ENDPOINT}`, (route) => route.abort("failed"));
 
     await registerPage.submit();
 
@@ -333,18 +404,12 @@ test.describe("Obsługa błędów", () => {
     await registerPage.gotoRegister();
 
     const testEmail = "test@example.com";
-    await registerPage.fillEmail(testEmail);
-    await registerPage.fillPassword("short"); // zbyt krótkie hasło
-    await registerPage.acceptTerms();
-    await registerPage.acceptAdult();
+    await fillRegisterForm(registerPage, testEmail, "short"); // zbyt krótkie hasło
 
     await registerPage.submit();
 
     // Sprawdź błąd walidacji - użyj specyficznego selektora dla komunikatu błędu
     await expect(registerPage.minPasswordLengthError).toBeVisible();
-
-    // Poczekaj chwilę na zakończenie walidacji
-    await page.waitForTimeout(100);
 
     // Sprawdź czy email jest zachowany (react-hook-form normalizuje: trim + toLowerCase)
     await expect(registerPage.emailInput).toHaveValue(testEmail);

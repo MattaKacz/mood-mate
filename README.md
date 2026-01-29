@@ -111,7 +111,12 @@ The following scripts are available in the `package.json`:
 ### E2E Requirements
 
 - A running Supabase backend with migrations applied (or a dedicated test instance).
-- A configured `.env` with the required Supabase credentials.
+- A configured `.env.test` file with the required Supabase credentials and test configuration:
+  ```sh
+  SUPABASE_URL=your_test_supabase_url
+  SUPABASE_KEY=your_test_supabase_key
+  TEST_DISABLE_RATE_LIMITING=true  # Required to prevent rate limiting during parallel E2E tests
+  ```
 - The app runs via the Playwright `webServer` command (`npm run dev -- --host 0.0.0.0 --port 4173`).
 
 ## Project Scope

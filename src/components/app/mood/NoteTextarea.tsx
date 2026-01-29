@@ -17,7 +17,7 @@ export function NoteTextarea({ value, onChange, error, disabled }: NoteTextareaP
   const isOverLimit = charCount > MAX_NOTE_LENGTH;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-test-id="mood-note">
       <div className="flex items-baseline justify-between">
         <Label htmlFor="mood-note" className="text-base font-semibold">
           Notatka
@@ -28,6 +28,7 @@ export function NoteTextarea({ value, onChange, error, disabled }: NoteTextareaP
           }`}
           aria-live="polite"
           aria-atomic="true"
+          data-test-id="mood-note-counter"
         >
           {charCount} / {MAX_NOTE_LENGTH}
         </span>
@@ -54,6 +55,7 @@ export function NoteTextarea({ value, onChange, error, disabled }: NoteTextareaP
             disabled:cursor-not-allowed disabled:opacity-50
             ${error || isOverLimit ? "border-destructive" : isFocused ? "border-primary" : "border-border/60"}
           `}
+          data-test-id="mood-note-input"
         />
       </div>
 
